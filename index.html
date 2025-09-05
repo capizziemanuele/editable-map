@@ -24,7 +24,15 @@
         "esri/layers/GraphicsLayer",
         "esri/widgets/Sketch",
         "esri/geometry/support/webMercatorUtils",
-      ], function (Map, MapView, GraphicsLayer, Sketch, webMercatorUtils) {
+        "esri/widgets/BasemapToggle",
+      ], function (
+        Map,
+        MapView,
+        GraphicsLayer,
+        Sketch,
+        webMercatorUtils,
+        BasemapToggle
+      ) {
         const graphicsLayer = new GraphicsLayer();
 
         function arcgisToGeoJSON(geometry) {
@@ -66,6 +74,25 @@
         });
         view.ui.add(sketch, "top-right");
 
+        // Add a BasemapToggle for Satellite vs Streets
+        const basemapToggle = new BasemapToggle({
+          view: view,
+          nextBasemap: "satellite",
+        });
+        view.ui.add(basemapToggle, "bottom-right");
+
+        // Add a simple button to switch to OSM
+        const osmButton = document.createElement("button");
+        osmButton.innerText = "OSM Basemap";
+        osmButton.style.position = "absolute";
+        osmButton.style.bottom = "10px";
+        osmButton.style.left = "10px";
+        osmButton.style.zIndex = 99;
+        osmButton.onclick = () => {
+          map.basemap = "osm";
+        };
+        view.ui.add(osmButton, "manual");
+
         // Export GeoJSON
         const exportBtn = document.getElementById("exportButton");
         exportBtn.addEventListener("click", () => {
@@ -75,22 +102,14 @@
             return;
           }
 
-          // Ask the user for a filename
           let filename = prompt(
             "Enter filename for the GeoJSON:",
             "geometry_wgs84"
           );
-          if (!filename) {
-            // Cancelled or empty input
-            return;
-          }
-
-          // Ensure .geojson extension
-          if (!filename.toLowerCase().endsWith(".geojson")) {
+          if (!filename) return;
+          if (!filename.toLowerCase().endsWith(".geojson"))
             filename += ".geojson";
-          }
 
-          // Convert ArcGIS graphics to GeoJSON
           const geojson = {
             type: "FeatureCollection",
             features: features.map((f) => ({
@@ -100,7 +119,6 @@
             })),
           };
 
-          // Download the GeoJSON
           const blob = new Blob([JSON.stringify(geojson, null, 2)], {
             type: "application/json",
           });

@@ -75,6 +75,22 @@
             return;
           }
 
+          // Ask the user for a filename
+          let filename = prompt(
+            "Enter filename for the GeoJSON:",
+            "geometry_wgs84"
+          );
+          if (!filename) {
+            // Cancelled or empty input
+            return;
+          }
+
+          // Ensure .geojson extension
+          if (!filename.toLowerCase().endsWith(".geojson")) {
+            filename += ".geojson";
+          }
+
+          // Convert ArcGIS graphics to GeoJSON
           const geojson = {
             type: "FeatureCollection",
             features: features.map((f) => ({
@@ -84,13 +100,14 @@
             })),
           };
 
+          // Download the GeoJSON
           const blob = new Blob([JSON.stringify(geojson, null, 2)], {
             type: "application/json",
           });
           const url = URL.createObjectURL(blob);
           const link = document.createElement("a");
           link.href = url;
-          link.download = "geometry_wgs84.geojson";
+          link.download = filename;
           link.click();
           URL.revokeObjectURL(url);
         });

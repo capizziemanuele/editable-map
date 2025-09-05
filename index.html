@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Editable Map - Export Geometry in WGS84</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.30/esri/themes/light/main.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+
+    <script src="https://js.arcgis.com/4.30/"></script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <button id="exportButton">Export GeoJSON</button>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/GraphicsLayer",
+        "esri/widgets/Sketch",
+        "esri/geometry/support/webMercatorUtils",
+      ], function (Map, MapView, GraphicsLayer, Sketch, webMercatorUtils) {
+        const graphicsLayer = new GraphicsLayer();
+
+        function arcgisToGeoJSON(geometry) {
+          if (!geometry) return null;
+
+          // Ensure geometry is in WGS84
+          if (geometry.spatialReference.isWebMercator) {
+            geometry = webMercatorUtils.webMercatorToGeographic(geometry);
+          }
+
+          switch (geometry.type) {
+            case "point":
+              return { type: "Point", coordinates: [geometry.x, geometry.y] };
+            case "polyline":
+              return { type: "LineString", coordinates: geometry.paths[0] };
+            case "polygon":
+              return { type: "Polygon", coordinates: geometry.rings };
+            default:
+              return null;
+          }
+        }
+
+        const map = new Map({
+          basemap: "streets-vector",
+          layers: [graphicsLayer],
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [8.8867, 45.4392],
+          zoom: 13,
+        });
+
+        const sketch = new Sketch({
+          layer: graphicsLayer,
+          view: view,
+          creationMode: "update",
+        });
+        view.ui.add(sketch, "top-right");
+
+        // Export GeoJSON
+        const exportBtn = document.getElementById("exportButton");
+        exportBtn.addEventListener("click", () => {
+          const features = graphicsLayer.graphics.toArray();
+          if (!features.length) {
+            alert("No geometries to export!");
+            return;
+          }
+
+          const geojson = {
+            type: "FeatureCollection",
+            features: features.map((f) => ({
+              type: "Feature",
+              properties: f.attributes || {},
+              geometry: arcgisToGeoJSON(f.geometry),
+            })),
+          };
+
+          const blob = new Blob([JSON.stringify(geojson, null, 2)], {
+            type: "application/json",
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "geometry_wgs84.geojson";
+          link.click();
+          URL.revokeObjectURL(url);
+        });
+      });
+    </script>
+  </body>
+</html>

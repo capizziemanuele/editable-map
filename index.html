@@ -81,18 +81,6 @@
         });
         view.ui.add(basemapToggle, "bottom-right");
 
-        // Add a simple button to switch to OSM
-        const osmButton = document.createElement("button");
-        osmButton.innerText = "OSM Basemap";
-        osmButton.style.position = "absolute";
-        osmButton.style.bottom = "10px";
-        osmButton.style.left = "10px";
-        osmButton.style.zIndex = 99;
-        osmButton.onclick = () => {
-          map.basemap = "osm";
-        };
-        view.ui.add(osmButton, "manual");
-
         // Export GeoJSON
         const exportBtn = document.getElementById("exportButton");
         exportBtn.addEventListener("click", () => {
